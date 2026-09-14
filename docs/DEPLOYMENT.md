@@ -17,8 +17,13 @@ files from the same origin.
 3. Vercel routes *every* request to this function ("the app you run locally
    deploys as-is"). FastAPI's existing route table handles `GET /`, `/new`,
    `/history`, `/review`, `/evaluation`, `/css/*`, `/js/*`, `/api/*`, `/docs`.
-4. `vercel.json` configures the function (`maxDuration: 60`). No `rewrites`
-   are needed — the app runs exactly as it does locally.
+4. `vercel.json` configures the function (`maxDuration: 60`, and
+   `includeFiles` so the runtime non-Python assets — `frontend/**`,
+   `evaluation/**` (PDF fixtures), `sample_data/**` — are bundled into the
+   serverless function. Without this, `app/main.py`'s `StaticFiles` mount
+   crashes the function at cold start because the directory is missing from
+   the bundle). No `rewrites` are needed — the app runs exactly as it does
+   locally.
 
 ## Required environment variables
 
