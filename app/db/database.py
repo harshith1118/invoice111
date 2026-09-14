@@ -515,7 +515,14 @@ class _PgConnection:
 
         if not url:
             raise RuntimeError("storage_backend=postgres requires DATABASE_URL")
-        self._conn = psycopg.connect(url, autocommit=True, row_factory=dict_row)
+        # connect_timeout keeps serverless cold starts from hanging when the
+        # manager database is unreachable or waking from a pause.
+        self._conn = psycopg.connect(
+            url,
+            autocommit=True,
+            row_factory=dict_row,
+            connect_timeout=10,
+        )
 
     def execute(self, sql: str, params: Iterable[Any] | None = None) -> _PgCursor:
         return _PgCursor(self._conn, sql, params)
