@@ -20,10 +20,11 @@ files from the same origin.
 4. `vercel.json` configures the function (`maxDuration: 60`, and
    `includeFiles` so the runtime non-Python assets — `frontend/**`,
    `evaluation/**` (PDF fixtures), `sample_data/**` — are bundled into the
-   serverless function. Without this, `app/main.py`'s `StaticFiles` mount
-   crashes the function at cold start because the directory is missing from
-   the bundle). No `rewrites` are needed — the app runs exactly as it does
-   locally.
+   serverless function. `includeFiles` must be a single glob *string*
+   (brace-expansion `{a,b}/**` — the schema rejects arrays). Without this,
+   `app/main.py`'s `StaticFiles` mount crashes the function at cold start
+   because the directory is missing from the bundle). No `rewrites` are
+   needed — the app runs exactly as it does locally.
 
 ## Required environment variables
 
