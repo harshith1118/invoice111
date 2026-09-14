@@ -1,10 +1,17 @@
-"""SQLite persistence layer.
+"""Persistence layer.
 
-Kept deliberately simple:
-- stdlib ``sqlite3`` (no ORM)
-- a fresh connection per operation (safe across FastAPI's thread pool)
-- WAL mode enabled
-- schema created idempotently on startup
+SQLite (default) and managed PostgreSQL are both supported behind one stable
+``Database`` interface, so services/routes/tests never care which backend is
+active:
+
+- local dev, pytest and the evaluation suite use SQLite (unchanged)
+- deployments configure ``DATABASE_URL`` (e.g. Neon) for durable Postgres
+
+Design kept deliberately simple:
+- stdlib ``sqlite3`` (no ORM) or psycopg 3 behind the same method surface
+- one connection per operation (safe across FastAPI's thread pool)
+- WAL mode enabled on SQLite
+- schema created idempotently on startup (per-backend DDL)
 """
 
 from __future__ import annotations
@@ -72,6 +79,62 @@ CREATE INDEX IF NOT EXISTS idx_logs_analysis
     ON processing_logs (analysis_id);
 """
 
+# PostgreSQL variant of the same schema: identical table/column/index names
+# so every query in the public methods works verbatim. JSON stays TEXT.
+_SCHEMA_POSTGRES = """
+CREATE TABLE IF NOT EXISTS documents (
+    id             BIGSERIAL PRIMARY KEY,
+    document_type  TEXT NOT NULL,
+    filename       TEXT NOT NULL,
+    created_at     TEXT NOT NULL,
+    extracted_text TEXT
+);
+
+CREATE TABLE IF NOT EXISTS analyses (
+    id                  BIGSERIAL PRIMARY KEY,
+    po_document_id      BIGINT,
+    invoice_document_id BIGINT,
+    po_data_json        TEXT,
+    invoice_data_json   TEXT,
+    created_at          TEXT NOT NULL,
+    processing_time_ms  INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS comparison_results (
+    id          BIGSERIAL PRIMARY KEY,
+    analysis_id BIGINT NOT NULL,
+    status      TEXT NOT NULL,
+    result_json TEXT,
+    created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS review_decisions (
+    id            BIGSERIAL PRIMARY KEY,
+    comparison_id BIGINT NOT NULL,
+    decision      TEXT NOT NULL,
+    note          TEXT,
+    reviewer      TEXT,
+    created_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS processing_logs (
+    id          BIGSERIAL PRIMARY KEY,
+    analysis_id BIGINT,
+    stage       TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    message     TEXT,
+    created_at  TEXT NOT NULL,
+    duration_ms INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_comparisons_analysis
+    ON comparison_results (analysis_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_comparison
+    ON review_decisions (comparison_id);
+CREATE INDEX IF NOT EXISTS idx_logs_analysis
+    ON processing_logs (analysis_id);
+"""
+
 _PROCESSING_STAGES = (
     "START",
     "PDF_EXTRACTION",
@@ -105,21 +168,40 @@ def _loads(raw: str | None) -> Any:
 
 
 class Database:
-    """Thin wrapper around sqlite3 with connection-per-operation semantics."""
+    """Thin wrapper around SQLite (or PostgreSQL) with connection-per-operation
+    semantics. The public method surface is identical for both backends."""
 
     def __init__(self, db_path: str | Path | None = None) -> None:
         settings = get_settings()
-        path = Path(db_path) if db_path else settings.db_path_abs
-        # Serverless filesystems (e.g. Vercel) are read-only except the temp
-        # dir; never crash on an unwritable location - fall back to temp.
-        try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-        except OSError:
-            path = Path(tempfile.gettempdir()) / path.name
-            path.parent.mkdir(parents=True, exist_ok=True)
-        self.db_path = path
+        self.backend: str = "sqlite"
+        if db_path is not None:
+            # An explicit path always means SQLite (tests / evaluation isolation).
+            self.backend = "sqlite"
+            path = Path(db_path)
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                path = Path(tempfile.gettempdir()) / path.name
+                path.parent.mkdir(parents=True, exist_ok=True)
+            self.db_path = path
+        elif settings.storage_backend == "postgres":
+            self.backend = "postgres"
+            self.db_path = Path("data/invoicematch.db")  # unused; kept stable
+            self._postgres_url = settings.postgres_url
+        else:
+            path = settings.db_path_abs
+            # Serverless filesystems (e.g. Vercel) are read-only except the temp
+            # dir; never crash on an unwritable location - fall back to temp.
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                path = Path(tempfile.gettempdir()) / path.name
+                path.parent.mkdir(parents=True, exist_ok=True)
+            self.db_path = path
 
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(self) -> Any:
+        if self.backend == "postgres":
+            return _PgConnection(self._postgres_url)
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL;")
@@ -128,8 +210,9 @@ class Database:
 
     # ----- lifecycle -------------------------------------------------
     def init_db(self) -> None:
+        schema = _SCHEMA_POSTGRES if self.backend == "postgres" else _SCHEMA
         with self._connect() as conn:
-            conn.executescript(_SCHEMA)
+            conn.executescript(schema)
 
     # ----- documents --------------------------------------------------
     def insert_document(
@@ -370,6 +453,84 @@ class Database:
             "reviewed": reviewed,
             "pending_reviews": pending,
         }
+
+
+# ---------------------------------------------------------------------------
+# PostgreSQL backend facade
+#
+# Presents a sqlite3-compatible surface (execute/executescript/context manager
+# + cursor.fetchone/fetchall/lastrowid) over psycopg 3 so the public Database
+# methods above work unmodified. psycopg is imported lazily so SQLite-only
+# installs/tests never require it.
+# ---------------------------------------------------------------------------
+def _translate_params(sql: str) -> str:
+    # This module's SQL uses `?` placeholders only (never inside literals).
+    return sql.replace("?", "%s")
+
+
+class _PgCursor:
+    def __init__(self, conn: Any, sql: str, params: Iterable[Any] | None) -> None:
+        stmt = sql.lstrip()
+        key = stmt[:6].upper() if len(stmt) >= 6 else stmt.upper()
+        if key == "PRAGMA":  # SQLite-only pragmas are no-ops on Postgres
+            self._cur = _NoopCursor()
+            return
+        t_sql = _translate_params(stmt)
+        self._inserting = key == "INSERT"
+        if self._inserting:
+            t_sql += " RETURNING id"
+        self._cur = conn.cursor()
+        self._cur.execute(t_sql, tuple(params or ()))
+
+    @property
+    def lastrowid(self) -> int:
+        if not self._inserting:
+            raise AttributeError("lastrowid is only available on INSERT")
+        row = self._cur.fetchone()
+        return int(row["id"])
+
+    def fetchone(self) -> Any:
+        return self._cur.fetchone()
+
+    def fetchall(self) -> list[Any]:
+        return list(self._cur.fetchall())
+
+
+class _NoopCursor:
+    lastrowid = None
+
+    def fetchone(self) -> None:
+        return None
+
+    def fetchall(self) -> list[Any]:
+        return []
+
+
+class _PgConnection:
+    """Context-managed PostgreSQL connection with sqlite3-like API."""
+
+    def __init__(self, url: str | None) -> None:
+        import psycopg
+        from psycopg.rows import dict_row
+
+        if not url:
+            raise RuntimeError("storage_backend=postgres requires DATABASE_URL")
+        self._conn = psycopg.connect(url, autocommit=True, row_factory=dict_row)
+
+    def execute(self, sql: str, params: Iterable[Any] | None = None) -> _PgCursor:
+        return _PgCursor(self._conn, sql, params)
+
+    def executescript(self, script: str) -> None:
+        for stmt in script.split(";"):
+            if stmt.strip():
+                with self._conn.cursor() as cur:
+                    cur.execute(stmt)
+
+    def __enter__(self) -> "_PgConnection":
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
+        return False
 
 
 # ---- module-level access (replaces get_settings at runtime) -----------

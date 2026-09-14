@@ -14,9 +14,11 @@ EVAL_FIXTURES = ROOT / "evaluation" / "fixtures"
 
 @pytest.fixture(autouse=True)
 def _isolate_database(tmp_path):
-    """Each test runs in an isolated temporary database."""
+    """Each test runs in an isolated temporary SQLite database."""
     db_file = tmp_path / "test.db"
     from app.config import reload_settings
+    # Force SQLite: a configured DATABASE_URL must not leak into tests.
+    os.environ.pop("DATABASE_URL", None)
     os.environ["DB_PATH"] = str(db_file)
     os.environ["EXTRACTOR_MODE"] = "deterministic_eval"
     reload_settings()

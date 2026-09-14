@@ -39,7 +39,8 @@ true).
 | `EXTRACTOR_MODE` | `groq` | `groq` or `deterministic_eval` (offline eval/test only). |
 | `FRANKFURTER_BASE_URL` | `https://api.frankfurter.dev/v1` | Optional override. |
 | `FRANKFURTER_TIMEOUT_SECONDS` | `5` | Optional override. |
-| `DB_PATH` | *(unset)* | Leave unset so deployment uses the ephemeral `/tmp` database (see below). |
+| `DATABASE_URL` | Neon `postgresql://user:pass@…neon.tech/dbname?sslmode=require` | **Required for durable persistence.** When set, all comparison/history/review data is stored in managed PostgreSQL across function instances. |
+| `DB_PATH` | *(unset)* | Leave unset when `DATABASE_URL` is set. If set it forces SQLite (ephemeral fallback). |
 
 `VERCEL` and `VERCEL_ENV` are injected by Vercel automatically — do not add
 them manually.
@@ -47,18 +48,25 @@ them manually.
 ## Storage on Vercel (important)
 
 Vercel serverless functions run on **read-only filesystems** with only a
-temporary, per-instance `/tmp` directory. Consequences:
+temporary, per-instance `/tmp` directory. This application therefore supports
+two storage modes:
 
-- When `VERCEL=1` and `DB_PATH` is not set, the app automatically places its
-  SQLite database in `/tmp/invoicematch.db` and marks storage
-  `persistence: "ephemeral"` in `GET /api/health`.
-- The ephemeral database **may reset between requests** and is not shared
-  across function instances. History/review data written in one request can
-  disappear in the next. This is a demo-mode limitation, and the app is
-  explicitly honest about it (`/api/health` → `storage.persistence`).
-- No durable production persistence is ever claimed. For durable hosted
-  persistence outside the MVP scope, the app would need a managed database —
-  this is intentionally not part of the deployment.
+- **Durable (recommended): `DATABASE_URL` set.** The app uses managed
+  PostgreSQL (e.g. Neon, free tier, connectible one-click from the Vercel
+  Marketplace) via `psycopg[binary]`. Comparisons, extracted document data,
+  comparison results, review decisions and processing logs are written to
+  Postgres with one connection per operation and survive across requests and
+  function instances. `GET /api/health` reports
+  `"storage":{"backend":"postgres","persistence":"durable", ...}`.
+- **Ephemeral fallback: no `DATABASE_URL`.** When `VERCEL=1` and `DB_PATH` is
+  not set, the app places SQLite in `/tmp/invoicematch.db` and marks storage
+  `persistence: "ephemeral"`. The ephemeral database **may reset between
+  requests** and is not shared across function instances — history/review
+  data written in one request can disappear in the next. This is a fallback
+  for demo/CI only, never for a working deployment.
+
+The connection string must never be committed or logged. `/api/health` only
+reports `host/database`, never credentials.
 
 ## PDF uploads
 
@@ -140,7 +148,8 @@ python run.py       # uvicorn app.main:app, http://127.0.0.1:8000
 - `python evaluation/run_evaluation.py --mode deterministic_eval` → 10/10,
   extraction 204/204, 0 failures.
 - `GET /api/health` → `"storage":{"backend":"sqlite","persistence":"ephemeral"}`
-  under `VERCEL=1`; `"durable"` locally.
+  under `VERCEL=1` with no `DATABASE_URL`; `"durable"` locally.
+- With `DATABASE_URL` set: `"storage":{"backend":"postgres","persistence":"durable",...}`.
 - `GET /api/health` reports `groq_configured` (true only when the key is set).
 - Frontend, New Comparison, Groq extraction, Frankfurter cross-currency path,
   and the Evaluation Suite were exercised over the ASGI entrypoint.

@@ -112,17 +112,33 @@ def _detail(comparison_id: int) -> dict[str, Any]:
 @router.get("/health")
 def health():
     settings = get_settings()
+    if settings.storage_backend == "postgres":
+        storage_path = _postgres_display(settings.postgres_url)
+    else:
+        storage_path = str(settings.db_path_abs)
     return {
         "status": "ok",
         "extractor": settings.extractor_mode,
         "groq_configured": bool(settings.groq_api_key),
         "fx_provider": "frankfurter",
         "storage": {
-            "backend": "sqlite",
+            "backend": settings.storage_backend,
             "persistence": settings.storage_persistence,
-            "path": str(settings.db_path_abs),
+            "path": storage_path,
         },
     }
+
+
+def _postgres_display(url: str | None) -> str:
+    """Human-safe backend identifier: host + database, never credentials."""
+    if not url:
+        return "postgres://<unset>"
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    db = (parts.path or "").lstrip("/")
+    return f"postgres://{host}/{db}"
 
 
 @router.post("/analyze")

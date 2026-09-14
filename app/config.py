@@ -41,10 +41,14 @@ class Settings:
     pdf_max_size_mb: int = 10
 
     # --- Storage ---
-    # SQLite file. Deployments use an ephemeral location (see below) because
-    # serverless filesystems are not durable.
+    # Backend: "sqlite" (local dev / tests / evaluation) or "postgres"
+    # (managed PostgreSQL when DATABASE_URL is configured, e.g. Vercel).
+    storage_backend: str = "sqlite"
+    # SQLite file (unused when storage_backend == "postgres").
     db_path: str = "data/invoicematch.db"
     storage_persistence: str = "durable"  # "durable" | "ephemeral"
+    # Managed PostgreSQL connection string. Never logged or exposed via API.
+    postgres_url: str | None = None
 
     # --- Frankfurter exchange rates (second external integration) ---
     # Only queried when a PO and invoice use different currencies. Needs
@@ -79,19 +83,28 @@ def _build_settings() -> Settings:
         except Exception:  # pragma: no cover - defensive
             return Decimal(default)
 
-    # Storage: an explicitly configured DB_PATH is always honored. Otherwise,
-    # serverless deployments (Vercel sets VERCEL=1) get an ephemeral SQLite
-    # file under the writable temp dir; the read-only project filesystem
-    # cannot host a writable database.
+    # Storage backend selection:
+    #   - DATABASE_URL set -> managed PostgreSQL (durable, e.g. Neon on Vercel)
+    #   - explicit DB_PATH  -> that SQLite file (always honored, incl. tests)
+    #   - Vercel, no DB_PATH-> ephemeral SQLite under the temp dir
+    #   - otherwise          -> local SQLite file
+    postgres_url = os.getenv("DATABASE_URL") or None
     explicit_db_path = os.getenv("DB_PATH")
-    if explicit_db_path:
+    if postgres_url:
+        db_path = "data/invoicematch.db"
+        storage_backend = "postgres"
+        storage_persistence = "durable"
+    elif explicit_db_path:
         db_path = explicit_db_path
+        storage_backend = "sqlite"
         storage_persistence = "durable"
     elif os.getenv("VERCEL") == "1":
         db_path = str(Path(tempfile.gettempdir()) / "invoicematch.db")
+        storage_backend = "sqlite"
         storage_persistence = "ephemeral"
     else:
         db_path = "data/invoicematch.db"
+        storage_backend = "sqlite"
         storage_persistence = "durable"
 
     settings = Settings(
@@ -105,6 +118,8 @@ def _build_settings() -> Settings:
         pdf_max_size_mb=int(os.getenv("PDF_MAX_SIZE_MB", "10")),
         db_path=db_path,
         storage_persistence=storage_persistence,
+        storage_backend=storage_backend,
+        postgres_url=postgres_url,
         frankfurter_base_url=os.getenv(
             "FRANKFURTER_BASE_URL", "https://api.frankfurter.dev/v1"
         ),

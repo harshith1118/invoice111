@@ -17,7 +17,13 @@ def main() -> None:
     print(f"Starting InvoiceMatch AI OS on http://{settings.host}:{settings.port}")
     print(f"  extractor mode : {settings.extractor_mode}")
     print(f"  fx provider    : frankfurter ({settings.frankfurter_base_url})")
-    print(f"  database       : {settings.db_path_abs}")
+    if settings.storage_backend == "postgres":
+        from urllib.parse import urlsplit
+
+        parts = urlsplit(settings.postgres_url or "")
+        print(f"  database       : postgres://{parts.hostname or ''}/{(parts.path or '').lstrip('/')}")
+    else:
+        print(f"  database       : sqlite ({settings.db_path_abs})")
     print(f"  press Ctrl+C to stop\n")
     uvicorn.run(
         "app.main:app",
