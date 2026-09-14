@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exception Review — InvoiceMatch AI OS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">InvoiceMatch <span>AI OS</span></div>
+    <nav>
+      <a href="index.html">Dashboard</a>
+      <a href="new.html">New Comparison</a>
+      <a href="history.html">History</a>
+      <a href="evaluation.html">Evaluation</a>
+    </nav>
+  </header>
+  <main>
+    <h1 class="page-title">Exception Review</h1>
+    <p class="page-sub">Approve or reject an exception. Never silently approve.</p>
+    <div id="content">
+      <div id="header"></div>
+      <div id="evidence"></div>
+      <div class="card" id="form">
+        <h2>Decision</h2>
+        <div class="radio-row">
+          <label><input type="radio" name="decision" value="approve"> Approve</label>
+          <label><input type="radio" name="decision" value="reject"> Reject</label>
+        </div>
+        <label for="note">Review Note (optional)</label>
+        <textarea id="note" rows="3" placeholder="Why this decision…"></textarea>
+        <button class="btn" id="decisionBtn" style="margin-top:14px">Submit Review</button>
+        <div id="formNotice"></div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/review.js"></script>
+</body>
+</html>

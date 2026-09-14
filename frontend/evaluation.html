@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evaluation — InvoiceMatch AI OS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">InvoiceMatch <span>AI OS</span></div>
+    <nav>
+      <a href="index.html">Dashboard</a>
+      <a href="new.html">New Comparison</a>
+      <a href="history.html">History</a>
+      <a href="evaluation.html" class="active">Evaluation</a>
+    </nav>
+  </header>
+  <main>
+    <h1 class="page-title">Evaluation Suite</h1>
+    <p class="page-sub">Run the 10 reproducible test cases against the real analysis pipeline.</p>
+
+    <div class="card">
+      <h2>Test Cases</h2>
+      <div id="cases"></div>
+      <div class="filter-bar" style="margin-top:18px;justify-content:space-between">
+        <div>
+          <label for="modeSelect" style="display:inline;font-size:14px;margin:0 8px 0 0">Extractor:</label>
+          <select id="modeSelect" style="width:220px">
+            <option value="deterministic_eval">deterministic_eval (offline)</option>
+            <option value="groq">groq (requires API key)</option>
+          </select>
+        </div>
+        <button class="btn" id="runBtn">Run Evaluation</button>
+      </div>
+    </div>
+
+    <div id="results"></div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/evaluation.js"></script>
+</body>
+</html>

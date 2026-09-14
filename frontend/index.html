@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InvoiceMatch AI OS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">InvoiceMatch <span>AI OS</span></div>
+    <nav>
+      <a href="index.html" class="active">Dashboard</a>
+      <a href="new.html">New Comparison</a>
+      <a href="history.html">History</a>
+      <a href="evaluation.html">Evaluation</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Invoice-to-purchase-order matching overview</p>
+
+    <div id="stats" class="stats-grid"></div>
+    <div id="notice"></div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="margin:0">Recent Comparisons</h2>
+        <a href="new.html" class="btn small">+ New Comparison</a>
+      </div>
+      <div id="recent"><div class="empty">No comparisons yet.</div></div>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script>
+    (async () => {
+      try {
+        const data = await api("/api/dashboard/stats");
+        const s = data.stats;
+        qs("#stats").innerHTML =
+          '<div class="stat-card"><div class="num">' + (s.total || 0) + '</div><div class="label">Total</div></div>'
+          + '<div class="stat-card"><div class="num" style="color:#047857">' + (s.matches || 0) + '</div><div class="label">Matched</div></div>'
+          + '<div class="stat-card"><div class="num" style="color:#b45309">' + (s.exceptions || 0) + '</div><div class="label">Exceptions</div></div>'
+          + '<div class="stat-card"><div class="num" style="color:#b91c1c">' + (s.invalid || 0) + '</div><div class="label">Invalid</div></div>'
+          + '<div class="stat-card"><div class="num" style="color:#2563eb">' + (s.pending_reviews || 0) + '</div><div class="label">Pending Review</div></div>';
+
+        if (data.recent && data.recent.length) {
+          let rows = data.recent.map(r =>
+            '<tr class="clickable" onclick="location.href=\'new.html?id=' + r.comparison_id + '\'">'
+            + '<td>' + esc(r.po_number || '—') + '</td>'
+            + '<td>' + esc(r.invoice_number || '—') + '</td>'
+            + '<td>' + esc(r.vendor || '—') + '</td>'
+            + '<td>' + badge(r.result) + '</td>'
+            + '<td>' + esc(r.review_status) + '</td>'
+            + '</tr>'
+          ).join("");
+          qs("#recent").innerHTML =
+            '<table><thead><tr><th>PO</th><th>Invoice</th><th>Vendor</th><th>Result</th><th>Review</th></tr></thead><tbody>'
+            + rows + '</tbody></table>';
+        }
+      } catch (e) {
+        qs("#notice").innerHTML = notice(e.message, "error");
+      }
+    })();
+  </script>
+</body>
+</html>

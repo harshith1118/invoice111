@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Comparison — InvoiceMatch AI OS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">InvoiceMatch <span>AI OS</span></div>
+    <nav>
+      <a href="index.html">Dashboard</a>
+      <a href="new.html" class="active">New Comparison</a>
+      <a href="history.html">History</a>
+      <a href="evaluation.html">Evaluation</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 class="page-title" id="title">New Comparison</h1>
+    <p class="page-sub" id="subtitle">Upload a purchase order and an invoice, then compare them.</p>
+
+    <div id="errors"></div>
+
+    <div class="card" id="uploadSection">
+      <div class="upload-grid">
+        <div class="upload-field">
+          <h3>Purchase Order</h3>
+          <input type="file" id="poFile" accept=".pdf,application/pdf">
+          <div class="file-note">Upload the PO as a PDF (text-based).</div>
+        </div>
+        <div class="upload-field">
+          <h3>Invoice</h3>
+          <input type="file" id="invFile" accept=".pdf,application/pdf">
+          <div class="file-note">Upload the invoice as a PDF (text-based).</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;align-items:center;gap:14px">
+        <button class="btn" id="compareBtn">Compare Documents</button>
+        <span id="statusText"></span>
+      </div>
+    </div>
+
+    <div id="result"></div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/upload.js"></script>
+</body>
+</html>

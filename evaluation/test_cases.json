@@ -1,0 +1,62 @@
+[
+  {
+    "case_id": 1,
+    "name": "Perfect match",
+    "description": "PO and invoice agree on every field.",
+    "note": "Baseline happy-path case."
+  },
+  {
+    "case_id": 2,
+    "name": "Quantity mismatch",
+    "description": "Invoice quantity differs from the PO.",
+    "note": "Targeted at the quantity comparison rule."
+  },
+  {
+    "case_id": 3,
+    "name": "Unit-price mismatch",
+    "description": "Invoice unit price differs from the PO.",
+    "note": "Targeted at the unit-price comparison rule."
+  },
+  {
+    "case_id": 4,
+    "name": "Total mismatch",
+    "description": "Invoice grand total differs from the PO.",
+    "note": "Targeted at the total comparison rule."
+  },
+  {
+    "case_id": 5,
+    "name": "Vendor mismatch",
+    "description": "Invoice names a different vendor.",
+    "note": "Targeted at the vendor comparison rule."
+  },
+  {
+    "case_id": 6,
+    "name": "PO-number mismatch",
+    "description": "Invoice references a different PO number.",
+    "note": "Targeted at the PO-number comparison rule."
+  },
+  {
+    "case_id": 7,
+    "name": "Missing required field",
+    "description": "Invoice does not include a PO reference.",
+    "note": "Expected: EXCEPTION (po_number missing → mismatch)."
+  },
+  {
+    "case_id": 8,
+    "name": "Multiple line items",
+    "description": "Three line items, all matching.",
+    "note": "Exercises item pairing across multiple rows."
+  },
+  {
+    "case_id": 9,
+    "name": "Formatting variation",
+    "description": "Vendor whitespace/case and thousand separators differ between documents.",
+    "note": "Exercises the conservative normalizer (should still MATCH)."
+  },
+  {
+    "case_id": 10,
+    "name": "Invalid/unreadable document",
+    "description": "Invoice is a scanned/image-only PDF (no text layer).",
+    "note": "Expected: INVALID DOCUMENT with a clear scanned-PDF message."
+  }
+]

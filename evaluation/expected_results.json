@@ -1,0 +1,244 @@
+[
+  {
+    "case_id": 1,
+    "expected_status": "MATCH",
+    "expected_mismatch_fields": [],
+    "expected_exception_fields": [],
+    "po_expected": {
+      "po_number": "PO-1001",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1001",
+      "po_number": "PO-1001",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 2,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["quantity"],
+    "expected_exception_fields": ["item_1.quantity"],
+    "po_expected": {
+      "po_number": "PO-1002",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1002",
+      "po_number": "PO-1002",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "3", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 3,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["unit_price"],
+    "expected_exception_fields": ["item_1.unit_price"],
+    "po_expected": {
+      "po_number": "PO-1003",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Consulting Services", "quantity": "4", "unit_price": "500.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1003",
+      "po_number": "PO-1003",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Consulting Services", "quantity": "4", "unit_price": "600.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 4,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["total"],
+    "expected_exception_fields": ["total"],
+    "po_expected": {
+      "po_number": "PO-1004",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Server Rack", "quantity": "1", "unit_price": "700.00", "total_price": "700.00"}],
+      "subtotal": "700.00",
+      "tax": "63.00",
+      "total": "763.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1004",
+      "po_number": "PO-1004",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Server Rack", "quantity": "1", "unit_price": "700.00", "total_price": "700.00"}],
+      "subtotal": "700.00",
+      "tax": "63.00",
+      "total": "765.00"
+    }
+  },
+  {
+    "case_id": 5,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["vendor_name"],
+    "expected_exception_fields": ["vendor"],
+    "po_expected": {
+      "po_number": "PO-1005",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1005",
+      "po_number": "PO-1005",
+      "vendor_name": "Beta Widgets Inc",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 6,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["po_number"],
+    "expected_exception_fields": ["po_number"],
+    "po_expected": {
+      "po_number": "PO-1006",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1006",
+      "po_number": "PO-1007",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 7,
+    "expected_status": "EXCEPTION",
+    "expected_mismatch_fields": ["po_number"],
+    "expected_exception_fields": ["po_number"],
+    "po_expected": {
+      "po_number": "PO-1008",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Office Chair", "quantity": "4", "unit_price": "150.00", "total_price": "600.00"}],
+      "subtotal": "600.00",
+      "tax": "54.00",
+      "total": "654.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1008",
+      "po_number": null,
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Office Chair", "quantity": "4", "unit_price": "150.00", "total_price": "600.00"}],
+      "subtotal": "600.00",
+      "tax": "54.00",
+      "total": "654.00"
+    }
+  },
+  {
+    "case_id": 8,
+    "expected_status": "MATCH",
+    "expected_mismatch_fields": [],
+    "expected_exception_fields": [],
+    "po_expected": {
+      "po_number": "PO-1009",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [
+        {"description": "Office Chair", "quantity": "4", "unit_price": "150.00", "total_price": "600.00"},
+        {"description": "Standing Desk", "quantity": "2", "unit_price": "450.00", "total_price": "900.00"},
+        {"description": "Monitor", "quantity": "5", "unit_price": "200.00", "total_price": "1000.00"}
+      ],
+      "subtotal": "2500.00",
+      "tax": "225.00",
+      "total": "2725.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1009",
+      "po_number": "PO-1009",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [
+        {"description": "Office Chair", "quantity": "4", "unit_price": "150.00", "total_price": "600.00"},
+        {"description": "Standing Desk", "quantity": "2", "unit_price": "450.00", "total_price": "900.00"},
+        {"description": "Monitor", "quantity": "5", "unit_price": "200.00", "total_price": "1000.00"}
+      ],
+      "subtotal": "2500.00",
+      "tax": "225.00",
+      "total": "2725.00"
+    }
+  },
+  {
+    "case_id": 9,
+    "expected_status": "MATCH",
+    "expected_mismatch_fields": [],
+    "expected_exception_fields": [],
+    "po_expected": {
+      "po_number": "PO-1010",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    },
+    "inv_expected": {
+      "invoice_number": "INV-1010",
+      "po_number": "PO-1010",
+      "vendor_name": "Acme Supplies",
+      "currency": "USD",
+      "items": [{"description": "Laptop", "quantity": "2", "unit_price": "1000.00", "total_price": "2000.00"}],
+      "subtotal": "2000.00",
+      "tax": "360.00",
+      "total": "2360.00"
+    }
+  },
+  {
+    "case_id": 10,
+    "expected_status": "INVALID DOCUMENT",
+    "expected_mismatch_fields": [],
+    "expected_exception_fields": [],
+    "po_expected": null,
+    "inv_expected": null,
+    "notes": "Invoice is an image-only (no text layer) PDF; it must be rejected as invalid. Because the invoice is unreadable, the pipeline intentionally does not spend an extraction call on the healthy PO (invalid pairs bail early)."
+  }
+]

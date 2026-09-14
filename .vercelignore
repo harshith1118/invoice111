@@ -1,0 +1,26 @@
+# Never ship secrets or local data
+.env
+credentials/
+*.pem
+*.key
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Local dev / VCS
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.git/
+.idea/
+.vscode/
+
+# Tests and eval outputs are not needed at runtime
+tests/
+evaluation/results/
+
+# Build-time fixture generator is not needed at runtime
+scripts/
